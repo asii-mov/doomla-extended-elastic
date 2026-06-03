@@ -1,0 +1,20 @@
+# Phase 1 — Elastic stack
+.harness/elastic.env
+.harness/elastic-ca.crt
+elastic_data/
+certs/
+
+# Generic
+__pycache__/
+*.pyc
+.venv/
+.env
+.env.local
+*.log
+
+# Inspect AI eval transcripts
+logs/
+*.eval
+
+# Pytest
+.pytest_cache/

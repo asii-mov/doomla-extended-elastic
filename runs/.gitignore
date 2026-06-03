@@ -1,0 +1,6 @@
+# Phase 7 run artefacts — transcripts can be MB to tens-of-MB, raw
+# alert dumps include host paths/IPs from the eval environment, and
+# `inspect_logs/*.eval` are large compressed zips. None of this belongs
+# in source control. Keep the directory itself by checking in this file.
+*
+!.gitignore

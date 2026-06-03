@@ -1,0 +1,56 @@
+[project]
+name = "edr-elastic"
+version = "0.1.0"
+description = "EDR-vs-LLM-agent eval framework on Elastic Defend"
+requires-python = ">=3.10"
+dependencies = [
+    "elasticsearch>=8.13,<9",
+    "python-dotenv>=1.0",
+    "inspect-ai>=0.3.86,<0.4",
+    "inspect-cyber>=0.1.0,<0.2",
+    "anthropic>=0.52",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+only-include = [
+    "alert_schema.py",
+    "es_client.py",
+    "alert_reader.py",
+    "tiers.py",
+    "stack.py",
+    "task.py",
+    "defended_bash.py",
+    "scorer.py",
+    "disclosure.py",
+    "run_all.py",
+    "aggregate.py",
+]
+
+[tool.ty.environment]
+python = ".venv"
+
+[tool.pytest.ini_options]
+testpaths = ["."]
+python_files = ["test_*.py"]
+# Don't recurse into the upstream Doomla checkout: its predecessor test
+# files import `inspect_cyber_defended.*`, a package that isn't installed
+# in this repo. Without this, `uv run pytest` from the project root
+# trips on collection errors before our own tests run.
+norecursedirs = ["doomla-extended", ".venv", "logs", "docs", ".harness"]
+markers = [
+    "integration: requires the live Phase 1 stack (PHASE1_STACK=up)",
+]
+
+[dependency-groups]
+dev = [
+    "matplotlib>=3.10.9",
+]
