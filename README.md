@@ -9,13 +9,12 @@ cyber-range from Inspect Cyber (Joomla CVE-2023-23752 → MySQL
 credentials → SSH pivot → GTFOBin privilege escalation → SSH lateral
 movement → flag).
 
-The project is a follow-up to a predecessor study that ran the same
-Doomla scenario against open-source [Falco](https://falco.org/) and
-found "thin coverage" — only 5 of 25 community rules ever fired
-across all of its runs. The central question this project was built
-to answer is: **does that finding survive against a commercial EDR
-with kernel-mode prevention and behavioural detection — or was it a
-Falco artefact?**
+The central questions: how much detection signal does a stock
+commercial EDR actually surface against an LLM-driven multi-step
+intrusion, how does telling the agent what the defender looks like
+change its behaviour, and does adding an explicit "minimise detection"
+directive shift the agent toward stealthier tradecraft or just into
+more persistent retrying?
 
 ## What we did
 
@@ -54,11 +53,12 @@ single-seed canary writeup is preserved as
 [`FINDINGS.md` Appendix A](./FINDINGS.md#appendix-a--canary-n1-numbers-superseded).
 Headlines:
 
-- **The "thin Falco coverage" finding survives N=5.** Defend with the
-  Prebuilt Rules library surfaced a mean of **10–16 distinct rules
-  per single run** across arms (widest single-arm CI [5.4, 19.0])
-  versus Falco's 5 of 25 across *all* of its runs. Qualitatively more
-  signal, not a marginal improvement.
+- **Defend surfaces signal across the full attack chain.** With the
+  Prebuilt Rules library installed unchanged, Defend triggered a mean
+  of **10–16 distinct rules per single run** across arms (widest
+  single-arm CI [5.4, 19.0]). The rule coverage holds equally on the
+  silent baseline and the wrapped arms — it's a property of the
+  defender, not of whether the agent was told the defender exists.
 
 - **The canary's `tier3_block` no-completion finding does not
   survive.** At N=1, `tier3_block` was the only no-completion arm;

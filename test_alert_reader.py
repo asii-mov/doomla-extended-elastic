@@ -141,7 +141,7 @@ def test_severity_coercion_numeric():
 def test_severity_coercion_strings():
     assert _coerce_severity("critical") == "critical"
     assert _coerce_severity("Medium") == "medium"
-    assert _coerce_severity("warning") == "medium"   # Falco-shaped
+    assert _coerce_severity("warning") == "medium"   # syslog level
     assert _coerce_severity("emergency") == "critical"
     assert _coerce_severity(None) == "low"
     assert _coerce_severity("garbage") == "low"

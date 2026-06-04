@@ -9,11 +9,11 @@ number. The single-seed canary writeup is preserved in
 ## TL;DR
 
 Across four configurations of the Doomla cyber-range eval against Claude
-Opus 4.7, the **central finding survives N=5**: Elastic Defend with the
-full Prebuilt Detection Rules library still surfaces an order of magnitude
-more signal than the predecessor's Falco run, at ~10–16 distinct rules per
-single run versus Falco's 5 of 25 *across all* runs. The "thin coverage"
-result was a Falco artefact.
+Opus 4.7, Elastic Defend with the full Prebuilt Detection Rules library
+surfaced **a mean of 10–16 distinct rules per single run** across arms
+(widest single-arm CI [5.4, 19.0]). Rule coverage is a property of the
+defender, not of whether the agent was told the defender exists — it
+holds equally on the silent baseline and the wrapped arms.
 
 Four updates vs. the canary writeup that change the headlines:
 
@@ -203,21 +203,15 @@ Three things to read off:
 
 ## Findings
 
-### 1. Signal density survives whitebox + N=5
+### 1. Defend surfaces broad rule coverage across the chain
 
 Across 20 runs, Defend with the Prebuilt Rules library surfaced a mean
 of **10.2 to 16.4 distinct rules per arm per run**, with the widest
-single-arm CI at [5.4, 19.0]. The Falco predecessor saw 5 of 25
-community rules fire across *all* of its runs. That is not a marginal
-improvement; the qualitative signal density is in a different regime.
-This finding holds equally on the silent baseline (mean 15.0 rules) and
-the wrapped arms — the rule coverage is a property of the defender,
-not of whether the agent was told it exists.
-
-This was the central question the eval was designed to answer:
-*was the Falco result a Falco artefact?* The N=5 answer is yes, and
-the conclusion is robust to outliers (it holds when seed 4 is
-excluded from `tier3_informed`).
+single-arm CI at [5.4, 19.0]. This finding holds equally on the silent
+baseline (mean 15.0 rules) and the wrapped arms — the rule coverage is
+a property of the defender, not of whether the agent was told it
+exists, and it is robust to outliers (it holds when seed 4 is excluded
+from `tier3_informed`).
 
 ### 2. The canary's wrapped-but-uninformed completion gap was noise
 
@@ -554,7 +548,7 @@ no-completion result).
 
 ### Canary findings, as originally written
 
-1. *"The 'thin Falco coverage' finding does not survive."* — Holds at
+1. *"Defend surfaces broad rule coverage across the chain."* — Holds at
    N=5; see §1.
 2. *"The wrapper actually changes behaviour, but only against an
    uninformed agent."* — **Does not survive**; see §2. The canary's

@@ -36,9 +36,8 @@ _NUMERIC_SEVERITY_BUCKETS: list[tuple[int, str]] = [
     (0, "low"),
 ]
 
-# Falco-shaped severity strings (carried over from the predecessor eval)
-# get mapped onto the Elastic 4-level scale.
-_FALCO_SEVERITY_MAP: dict[str, str] = {
+# Syslog-style severity strings (RFC 5424) map onto Elastic's 4-level scale.
+_SYSLOG_SEVERITY_MAP: dict[str, str] = {
     "debug": "low",
     "informational": "low",
     "notice": "low",
@@ -63,8 +62,8 @@ def _coerce_severity(value: Any) -> str:
     s = str(value).strip().lower()
     if s in SEVERITY_RANK:
         return s
-    if s in _FALCO_SEVERITY_MAP:
-        return _FALCO_SEVERITY_MAP[s]
+    if s in _SYSLOG_SEVERITY_MAP:
+        return _SYSLOG_SEVERITY_MAP[s]
     return "low"
 
 

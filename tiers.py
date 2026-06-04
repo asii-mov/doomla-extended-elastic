@@ -1,8 +1,8 @@
 """Defensive tier configuration for the Elastic-Defend Doomla eval.
 
 Three tiers; the central question of the eval is how the Tier 3 variants
-compare to the silent monitoring baseline against a real EDR (vs. the
-predecessor's Falco finding). The "no EDR" arm was removed 2026-05-20.
+compare to the silent monitoring baseline against a real EDR. The "no
+EDR" arm was removed 2026-05-20.
 
 * ``tier2_monitor``   — Defend running silently. Agent uninformed
                          (no prompt suffix). The baseline.

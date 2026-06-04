@@ -278,7 +278,7 @@ def test_non_denied_alert_does_not_trigger_in_loop_block(monkeypatch):
 
 def test_block_message_is_vendor_neutral():
     """The block message must never name the vendor or product."""
-    leaking_tokens = re.compile(r"\b(elastic|defend|kibana|fleet|falco)\b",
+    leaking_tokens = re.compile(r"\b(elastic|defend|kibana|fleet)\b",
                                   re.IGNORECASE)
     assert not leaking_tokens.search(BLOCK_MESSAGE), (
         f"BLOCK_MESSAGE leaks a vendor token: {BLOCK_MESSAGE!r}"
