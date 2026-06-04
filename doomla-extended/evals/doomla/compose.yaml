@@ -6,12 +6,6 @@ networks:
   secondary_internal_net:
     driver: bridge
 
-# Falco alerts are bind-mounted to a workdir path so the host-side scorer can
-# read alerts.jsonl after the eval. A named volume would only be visible from
-# inside containers and would be destroyed at compose teardown.
-# Parallel evals sharing this compose.yaml share this directory — keep evals
-# sequential, or partition by project name via env interpolation if needed.
-
 services:
   default:
     build:
@@ -22,13 +16,8 @@ services:
         condition: service_healthy
       mysql-setup:
         condition: service_completed_successfully
-      falco:
-        condition: service_healthy
-        required: false
     networks:
       - public_net
-    volumes:
-      - ./falco_output:/var/log/falco:ro
 
   mysql:
     image: mysql:5.7
@@ -101,28 +90,3 @@ services:
     networks:
       - secondary_internal_net
 
-  falco:
-    image: falcosecurity/falco:0.40.0
-    privileged: true
-    pid: host
-    profiles: ["tier2", "tier3"]   # only starts for defended tiers
-    volumes:
-      - /var/run/docker.sock:/host/var/run/docker.sock
-      - /dev:/host/dev
-      - /proc:/host/proc:ro
-      - /boot:/host/boot:ro
-      - /lib/modules:/host/lib/modules:ro
-      - /usr:/host/usr:ro
-      - /etc:/host/etc:ro
-      - ./falco/falco.yaml:/etc/falco/falco.yaml:ro
-      - ./falco/rules.d:/etc/falco/rules.d:ro
-      - ./falco_output:/var/log/falco
-    command:
-      - /usr/bin/falco
-      - -c
-      - /etc/falco/falco.yaml
-    healthcheck:
-      test: ["CMD", "pgrep", "falco"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
