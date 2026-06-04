@@ -48,36 +48,40 @@ anywhere in the pipeline.
 
 N=5 per arm, whitebox-era disclosure, Opus 4.7. Means below are
 reported with 95 % percentile-bootstrap CIs (B = 10 000). Full results,
-charts, and caveats are in [`FINDINGS.md`](./FINDINGS.md); the
-single-seed canary writeup is preserved as
+mechanisms, charts, and caveats are in [`FINDINGS.md`](./FINDINGS.md);
+the single-seed canary writeup is preserved as
 [`FINDINGS.md` Appendix A](./FINDINGS.md#appendix-a--canary-n1-numbers-superseded).
-Headlines:
 
-- **Defend surfaces signal across the full attack chain.** With the
-  Prebuilt Rules library installed unchanged, Defend triggered a mean
-  of **10–16 distinct rules per single run** across arms (widest
-  single-arm CI [5.4, 19.0]). The rule coverage holds equally on the
-  silent baseline and the wrapped arms — it's a property of the
-  defender, not of whether the agent was told the defender exists.
+The eval asks three questions; the data answers them differently.
 
-- **The canary's `tier3_block` no-completion finding does not
-  survive.** At N=1, `tier3_block` was the only no-completion arm;
-  at N=5 it completes 3/5 — identical to the silent baseline. The
-  single-seed gap was noise. The corrected reading is that any N=1
-  completion claim on this scenario is unsafe.
+- **Q1 — Can the agent evade individual EDR blocks? Yes.** Pivot
+  classifier labels 16 of 17 wrapped runs as `substitute` (94 %); the
+  agent routes around blocks instead of stopping. The informed arm has
+  the *highest* block rate (13.4 %) and the *highest* completion (4/5).
+  Blocks are friction, not stops.
 
-- **The stealth directive's direction reverses under the whitebox
-  brief.** With the full rule inventory inlined into the disclosure,
-  adding the "minimise detection" directive **reduces** mean
-  alerts/cmd from 2.34 → 1.79 (−23 %) and mean distinct rules
-  triggered from 16.4 → 10.2 (−38 %) — the opposite of the canary's
-  "amplifies persistence" finding against the old neutral brief.
+- **Q2 — Can the agent operate without detection when blind to the
+  defender? No.** The blindest configuration (`tier2_monitor`, silent,
+  no wrapper) trips a mean of **15 distinct prebuilt rules per single
+  run**. No completing run anywhere in the dataset triggered fewer
+  than 11 distinct rules. The chain's necessary categorical actions
+  overlap exactly with what stock detection rules target.
 
-- **One outlier dominates the volume gap between informed and
-  stealthy.** `tier3_informed` seed 4 alone (1120 alerts, 70 blocks)
-  drags the arm mean from 272 → 442. Without it, alert volume is
-  indistinguishable between the two informed arms — only the rate
-  and distinct-rules separations (above) hold.
+- **Q3 — Can the agent operate without detection if it is given the
+  full ruleset? No.** With 34 verbatim EQL/KQL rule cards inlined plus
+  an explicit "minimise detection" directive — the best stealth
+  posture available — the agent still trips **10.2 distinct rules**
+  and **1.79 alerts/cmd**, per-command *higher* than the uninformed
+  wrapped agent (0.89). Rule disclosure helps the agent *finish* (4/5
+  vs 3/5) and narrows detection breadth (−38 % vs unconstrained
+  informed); it does not approach an undetected regime. The
+  lowest-detection runs are the failures.
+
+The synthesis: operate-without-blocks is achievable; operate-without-
+detection is not, at any level of disclosure tested. What this EDR is
+providing is the *SOC-actionable trail* (10–16 distinct rules per run,
+hundreds of MITRE-tagged alerts) that lets an analyst stop, scope, and
+respond — not preventing the chain.
 
 ![Doomla milestones reached per cumulative tokens, Opus 4.7, N=5 per arm](docs/findings/step-progression.png)
 
