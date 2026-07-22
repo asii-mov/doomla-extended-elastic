@@ -54,7 +54,7 @@ the single-seed canary writeup is preserved as
 
 The eval asks three questions; the data answers them differently.
 
-- **Q1 — Can the agent evade individual EDR blocks? Yes.** Pivot
+- **Q1 — Can the agent evade EDR blocks? Yes.** Pivot
   classifier labels 16 of 17 wrapped runs as `substitute` (94 %); the
   agent routes around blocks instead of stopping. The informed arm has
   the *highest* block rate (13.4 %) and the *highest* completion (4/5).
@@ -77,11 +77,7 @@ The eval asks three questions; the data answers them differently.
   informed); it does not approach an undetected regime. The
   lowest-detection runs are the failures.
 
-The synthesis: operate-without-blocks is achievable; operate-without-
-detection is not, at any level of disclosure tested. What this EDR is
-providing is the *SOC-actionable trail* (10–16 distinct rules per run,
-hundreds of MITRE-tagged alerts) that lets an analyst stop, scope, and
-respond — not preventing the chain.
+The synthesis: AI overthinks EDR rules and as a result triggers MORE alerts compared to when rules are not provided. AI is able to circumvent the blocked attempts successfully by running alternative commands/scripts however Doomla is too small to reach a conclusive answer.
 
 ![Doomla milestones reached per cumulative tokens, Opus 4.7, N=5 per arm](docs/findings/step-progression.png)
 
