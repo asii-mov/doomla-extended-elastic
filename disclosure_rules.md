@@ -1,13 +1,13 @@
 Defend behavior rules (kernel-level prevention, BPF-LSM where supported)
 ----------------------------------------------------------------------
 
-These rules are evaluated inside the Defend agent and enforce in prevent mode. 
+The Defend agent evaluates these rules and enforces them in prevent mode.
 Source: github.com/elastic/protections-artifacts/behavior/rules/linux.
 
 #### Potential Linux Tunneling and/or Port Forwarding
 _Severity: n/a · Language: n/a_
 
-This rule monitors for a set of Linux utilities that can be used for tunneling and port forwarding. Attackers can leverage tunneling and port forwarding techniques to bypass network defenses, establish hidden communication channels, and gain unauthorized access to internal resources, facilitating data exfiltration, lateral movement, and remote control.
+Detects Linux utilities and command lines used for tunneling or port forwarding. Attackers use these methods to bypass network controls, reach internal systems, move laterally, exfiltrate data, or maintain remote access.
 
 ```
 process where event.type == "start" and event.action == "exec" and (
@@ -53,7 +53,7 @@ process where event.type == "start" and event.action == "exec" and (
 #### Manual Memory Password Searching Activity
 _Severity: n/a · Language: n/a_
 
-This rule detects the use of the 'strings' command to search for passwords in memory. Attackers may leverage this technique to extract sensitive information from memory. This behavior should not happen by default, and should be investigated thoroughly.
+Detects `strings` reading `/dev/mem`, which can expose passwords and other secrets in memory. Normal workloads rarely do this, so the event warrants investigation.
 
 ```
 process where event.type == "start" and event.action == "exec" and process.name == "strings" and process.args == "/dev/mem"
@@ -62,7 +62,7 @@ process where event.type == "start" and event.action == "exec" and process.name 
 #### Potential Linux Credential Dumping via Proc Filesystem
 _Severity: n/a · Language: n/a_
 
-Identifies the execution of the mimipenguin exploit script which is linux adaptation of Windows tool mimikatz. Mimipenguin exploit script is used to dump clear text passwords from a currently logged-in user. The tool exploits a known vulnerability CVE-2018-20781. Malicious actors can exploit the cleartext credentials in memory by dumping the process and extracting lines that have a high probability of containing cleartext passwords.
+Detects the process sequence used by mimipenguin, a Linux credential-dumping tool inspired by Mimikatz. The tool dumps process memory and searches it for cleartext passwords from logged-in users. It can exploit CVE-2018-20781.
 
 ```
 sequence by process.parent.executable, user.id with maxspan=60s
@@ -73,7 +73,7 @@ sequence by process.parent.executable, user.id with maxspan=60s
 #### Potential Linux Credential Dumping via Unshadow
 _Severity: n/a · Language: n/a_
 
-Identifies the execution of the unshadow utility which is part of John the Ripper, a password-cracking tool on the host machine. Malicious actors can use the utility to retrieve the combined contents of the '/etc/shadow' and '/etc/password' files. Using the combined file generated from the utility, the malicious threat actors can use them as input for password-cracking utilities or prepare themselves for future operations by gathering credential information of the victim.
+Detects `unshadow`, a John the Ripper utility that combines password and shadow files into input for password cracking. An attacker can use the result to crack local account credentials.
 
 ```
 process where event.type == "start" and event.action == "exec" and
@@ -83,7 +83,7 @@ process.name == "unshadow" and process.args_count >= 2
 #### Attempt to Clear Logs via Journalctl
 _Severity: n/a · Language: n/a_
 
-This rule monitors for attempts to clear logs using the "journalctl" command on Linux systems. Adversaries may use this technique to cover their tracks by deleting or truncating log files, making it harder for defenders to investigate their activities. The rule looks for the execution of "journalctl" with arguments that indicate log clearing actions, such as "--vacuum-time", "--vacuum-size", or "--vacuum-files".
+Detects `journalctl` arguments that delete old journal entries, including `--vacuum-time`, `--vacuum-size`, and `--vacuum-files`. An attacker may clear these logs to remove evidence and hinder an investigation.
 
 ```
 process where event.type == "start" and event.action == "exec" and process.name == "journalctl" and
@@ -97,7 +97,7 @@ not (
 #### Clearing of Shell History via Environment Variables
 _Severity: n/a · Language: n/a_
 
-This rule detects the clearing of the shell history via environment variables. Attackers may clear the shell history to hide their activities from being tracked. By leveraging environment variables such as HISTSIZE, HISTFILESIZE, HISTCONTROL, and HISTFILE, attackers can clear the shell history by setting them to 0, ignoring spaces, or redirecting the history to /dev/null, effectively erasing the command history.
+Detects environment variables that disable or discard shell history. The covered settings set `HISTSIZE` or `HISTFILESIZE` to zero, ignore commands prefixed with spaces, or redirect `HISTFILE` to `/dev/null`.
 
 ```
 process where event.type == "start" and event.action == "exec" and process.env_vars like~ (
@@ -108,7 +108,7 @@ process where event.type == "start" and event.action == "exec" and process.env_v
 #### Deletion of Shell History File
 _Severity: n/a · Language: n/a_
 
-Detects the deletion of shell history files through suspicious or commonly available tooling via a file deletion event. Shell history files are used to store the command history of a user. Adversaries may attempt to delete these files to remove evidence of their activity.
+Detects common tools deleting shell history files. Attackers may remove these files to erase a record of their commands.
 
 ```
 file where event.type == "deletion" and file.name in (
@@ -137,7 +137,7 @@ file where event.type == "deletion" and file.name in (
 #### In-Memory Process Execution
 _Severity: n/a · Language: n/a_
 
-This rule detects when a process is executed from a memory file descriptor (memfd). Attackers may use memfd to create and execute code directly in memory, bypassing traditional file-based detection mechanisms. The use of memfd for process execution is uncommon and may indicate an attempt to evade security controls.
+Detects a process executed from a memory file descriptor, or `memfd`. This lets code run without a normal executable file on disk and may indicate an attempt to evade file-based controls.
 
 ```
 process where event.type == "start" and event.action == "exec" and process.executable like "?memfd:*"
@@ -146,7 +146,7 @@ process where event.type == "start" and event.action == "exec" and process.execu
 #### Potential Nologin SSH Backdoor
 _Severity: n/a · Language: n/a_
 
-This rule identifies instances where the `nologin` command is executed by the `sshd` process. This behavior is unusual and may indicate an attempt to manipulate a system user for backdoor access.
+Detects `sshd` executing `nologin`. This unusual process relationship may indicate that someone is manipulating a system account to create backdoor access.
 
 ```
 process where event.type == "start" and event.action == "exec" and process.name == "nologin " and
@@ -156,7 +156,7 @@ process.parent.name == "sshd"
 #### Potential Proxy Execution via Sed
 _Severity: n/a · Language: n/a_
 
-This rule detects the execution of a command or binary through the Sed binary. Attackers may use this technique to execute commands while attempting to evade detection.
+Detects `sed` launching a command through a shell. An attacker may use this proxy execution path to avoid rules that look for direct execution.
 
 ```
 sequence with maxspan=3s
@@ -170,7 +170,7 @@ sequence with maxspan=3s
 #### Linux Reverse Shell
 _Severity: n/a · Language: n/a_
 
-Detects the creation of a reverse shell through a suspicious parent child relationship spawned via a shell with suspicious command line arguments. Attackers may spawn reverse shells to establish persistence onto a target system.
+Detects a reverse shell by correlating a shell's network connection with a child process that has interactive-shell arguments. A reverse shell gives a remote operator command access to the host.
 
 ```
 sequence with maxspan=5s
@@ -193,7 +193,7 @@ sequence with maxspan=5s
 #### Linux Reverse Shell via Child
 _Severity: n/a · Language: n/a_
 
-Detects the creation of a reverse shell through a shell with suspicious command line arguments. Attackers may spawn reverse shells to establish persistence onto a target system.
+Detects a network connection followed by an interactive child shell. This sequence can indicate a reverse shell that gives a remote operator command access.
 
 ```
 sequence by process.entity_id with maxspan=5s
@@ -211,7 +211,7 @@ sequence by process.entity_id with maxspan=5s
 #### Linux Reverse Shell via netcat
 _Severity: n/a · Language: n/a_
 
-Detects the creation of a reverse shell through netcat. Attackers may spawn reverse shells to establish persistence onto a target system.
+Detects netcat starting with shell-execution arguments and then opening a network connection. This sequence can create a reverse shell.
 
 ```
 sequence by process.entity_id with maxspan=5s
@@ -234,7 +234,7 @@ sequence by process.entity_id with maxspan=5s
 #### Non-interactive Shell Upgrade
 _Severity: n/a · Language: n/a_
 
-Identifies when a non-interactive terminal (tty) is being upgraded to a fully interactive shell. Attackers may upgrade a simple reverse shell to a fully interactive tty after obtaining initial access to a host, in order to obtain a more stable connection.
+Detects commands that turn a non-interactive shell into a fully interactive TTY. Attackers often do this after gaining an initial reverse shell because an interactive terminal is easier to use and less fragile.
 
 ```
 process where event.type == "start" and event.action == "exec" and (
@@ -263,7 +263,7 @@ not (
 #### Potential Reverse Shell Activity via TCP/UDP Socket
 _Severity: n/a · Language: n/a_
 
-This rule detects the execution of a shell process with suspicious arguments which may be indicative of reverse shell activity. Attackers may use the "/dev/tcp" or "/dev/udp" file descriptors to establish a reverse shell connection.
+Detects shell processes that open `/dev/tcp` or `/dev/udp` file descriptors and redirect input or output through them. This pattern can establish a reverse shell without a separate networking tool.
 
 ```
 process where event.type == "start" and event.action == "exec" and process.parent.executable != null and (
@@ -292,7 +292,7 @@ not (
 #### Suspicious PHP Command Execution
 _Severity: n/a · Language: n/a_
 
-This rule monitors for suspicious PHP command executions by detecting the start of a PHP process with a command line argument that contains keywords commonly used by attackers to execute malicious code. These command line arguments include operations to execute code, create subprocesses, and encode or decode data.
+Detects `php -r` commands containing functions commonly used to execute code, start processes, access the network, or encode and decode payloads.
 
 ```
 process where event.type == "start" and event.action == "exec" and process.parent.executable != null and
@@ -323,7 +323,7 @@ process.args == "-r" and process.command_line like~ (
 #### General Privilege Escalation Sequence Detected
 _Severity: n/a · Language: n/a_
 
-This rule detects the execution of a binary, followed by a UID change event to 0 (root), and then the execution of a command that is used to check the current user's privileges. This sequence is often used by exploits to escalate privileges to root, and check if the escalation was successful.
+Detects a non-root binary execution followed by a UID change to root and an `id`, `whoami`, or `logname` check. Exploits often produce this sequence when privilege escalation succeeds.
 
 ```
 sequence with maxspan=10s
@@ -337,7 +337,7 @@ sequence with maxspan=10s
 #### Potential Privilege Escalation via SUID Binary
 _Severity: n/a · Language: n/a_
 
-Identifies instances where a process is executed with user/group ID 0 (root), and a real user/group ID that is not 0. This is indicative of a process that has been granted SUID/SGID permissions, allowing it to run with elevated privileges. Attackers may leverage a misconfiguration for exploitation in order to escalate their privileges to root, or establish a backdoor for persistence.
+Detects selected binaries running with an effective user or group ID of 0 while the real ID remains non-root. SUID or SGID permissions create this state. An attacker may abuse a misconfigured binary to gain root privileges or persist.
 
 ```
 process where event.type == "start" and event.action == "exec" and (
@@ -365,7 +365,7 @@ process where event.type == "start" and event.action == "exec" and (
 #### Potential Privilege Escalation via SUID/SGID Proxy Execution
 _Severity: n/a · Language: n/a_
 
-Detects potential privilege escalation via SUID/SGID proxy execution on Linux systems. Attackers may exploit binaries with the SUID/SGID bit set to execute commands with elevated privileges. This rule identifies instances where a process is executed with root privileges (user ID 0 or group ID 0) while the real user or group ID is non-root, indicating potential misuse of SUID/SGID binaries.
+Detects possible SUID or SGID proxy execution. It matches a process with an effective user or group ID of 0 and a non-root real ID. An attacker may abuse this state to run commands with elevated privileges.
 
 ```
 process where event.type == "start" and event.action == "exec" and
@@ -398,7 +398,7 @@ and not process.name == "su" and process.args == "-"
 #### Privilege Escalation via PKEXEC Exploitation
 _Severity: n/a · Language: n/a_
 
-Identifies attempt to exploit a local privilege escalation in polkit pkexec (CVE-2021-4034) via unsecure environment variable injection. Successful exploitation allows an unprivileged user to escalate to the root user.
+Detects an attempt to exploit the `pkexec` environment-variable injection flaw CVE-2021-4034. Successful exploitation gives an unprivileged user root access.
 
 ```
 file where event.action != "deletion" and
@@ -410,13 +410,13 @@ file.path like~ "/*GCONV_PATH*"
 SIEM detection rules (run by the detection engine on ingested events)
 ----------------------------------------------------------------------
 
-These rules run on a ~1-minute cadence against logs-endpoint.events.* and write to .alerts-security. 
+The detection engine runs these rules about once per minute against `logs-endpoint.events.*` and writes matches to `.alerts-security`.
 Source: github.com/elastic/detection-rules/rules/linux.
 
 #### Sensitive Files Compression
 _Severity: medium · Language: kuery_
 
-Identifies the use of a compression utility to collect known files containing sensitive information, such as credentials and system configurations.
+Detects compression tools collecting known credential files and sensitive system configuration files.
 
 MITRE: Credential Access / T1552 Unsecured Credentials (T1552.001 Credentials In Files); Collection / T1005 Data from Local System; Collection / T1560 Archive Collected Data (T1560.001 Archive via Utility)
 
@@ -465,7 +465,7 @@ process.args:
 #### Potential External Linux SSH Brute Force Detected
 _Severity: low · Language: eql_
 
-Identifies multiple external consecutive login failures targeting a user account from the same source address within a short time interval. Adversaries will often brute force login attempts across multiple users with a common or known password, in an attempt to gain access to these accounts.
+Detects many failed logins from one external source IP against the same account within 30 seconds. This pattern can indicate password guessing or spraying.
 
 MITRE: Credential Access / T1110 Brute Force (T1110.001 Password Guessing, T1110.003 Password Spraying)
 
@@ -483,7 +483,7 @@ sequence by host.id, source.ip, user.name with maxspan=30s
 #### Potential Successful SSH Brute Force Attack
 _Severity: high · Language: eql_
 
-Identifies multiple SSH login failures followed by a successful one from the same source address. Adversaries can attempt to login into multiple users with a common or known password to gain access to accounts.
+Detects many failed SSH logins followed by a successful login from the same source address. The sequence can indicate that password guessing or spraying found a valid account.
 
 MITRE: Credential Access / T1110 Brute Force (T1110.001 Password Guessing, T1110.003 Password Spraying); Initial Access / T1078 Valid Accounts
 
@@ -498,7 +498,7 @@ sequence by host.id, source.ip, user.name with maxspan=15s
 #### System Log File Deletion
 _Severity: medium · Language: eql_
 
-Identifies the deletion of sensitive Linux system logs. This may indicate an attempt to evade detection or destroy forensic evidence on a system.
+Detects deletion of sensitive Linux system logs. An attacker may delete them to evade detection or destroy forensic evidence.
 
 MITRE: Defense Evasion / T1070 Indicator Removal (T1070.002 Clear Linux or Mac System Logs, T1070.004 File Deletion)
 
@@ -516,7 +516,7 @@ file where host.os.type == "linux" and event.type == "deletion" and file.path in
 #### Sudo Command Enumeration Detected
 _Severity: low · Language: eql_
 
-This rule monitors for the usage of the sudo -l command, which is used to list the allowed and forbidden commands for the invoking user. Attackers may execute this command to enumerate commands allowed to be executed with sudo permissions, potentially allowing to escalate privileges to root.
+Detects `sudo -l`, which lists the commands the current user may or may not run with `sudo`. Attackers use it to find paths to root.
 
 MITRE: Discovery / T1033 System Owner/User Discovery; Discovery / T1069 Permission Groups Discovery (T1069.001 Local Groups); Privilege Escalation / T1548 Abuse Elevation Control Mechanism (T1548.003 Sudo and Sudo Caching)
 
@@ -530,7 +530,7 @@ process where host.os.type == "linux" and event.type == "start" and
 #### SUID/SGUID Enumeration Detected
 _Severity: medium · Language: eql_
 
-This rule monitors for the usage of the "find" command in conjunction with SUID and SGUID permission arguments. SUID (Set User ID) and SGID (Set Group ID) are special permissions in Linux that allow a program to execute with the privileges of the file owner or group, respectively, rather than the privileges of the user running the program. In case an attacker is able to enumerate and find a binary that is misconfigured, they might be able to leverage this misconfiguration to escalate privileges by exploiting vulnerabilities or built-in features in the privileged program.
+Detects `find` commands that search for files with SUID or SGID permissions. These permissions let a program run with its file owner's or group's privileges. Attackers search for misconfigured privileged binaries that can be abused to gain root access.
 
 MITRE: Discovery / T1083 File and Directory Discovery; Privilege Escalation / T1548 Abuse Elevation Control Mechanism (T1548.001 Setuid and Setgid)
 
@@ -547,7 +547,7 @@ process.name == "find" and process.args : "-perm" and process.args : (
 #### File Transfer or Listener Established via Netcat
 _Severity: medium · Language: eql_
 
-A netcat process is engaging in network activity on a Linux host. Netcat is often used as a persistence mechanism by exporting a reverse shell or by serving a shell on a listening port. Netcat is also sometimes used for data exfiltration.
+Detects netcat arguments used to open a listener, launch a shell, or transfer data through standard input and output. These patterns can indicate a bind shell, reverse shell, persistence, or data exfiltration.
 
 MITRE: Execution / T1059 Command and Scripting Interpreter (T1059.004 Unix Shell); Command and Control / T1095 Non-Application Layer Protocol; Exfiltration / T1048 Exfiltration Over Alternative Protocol (T1048.003 Exfiltration Over Unencrypted Non-C2 Protocol)
 
@@ -568,7 +568,7 @@ process.args like~ (
 #### Potential Webshell Deployed via Apache Struts CVE-2023-50164 Exploitation
 _Severity: high · Language: eql_
 
-Identifies successful exploitation of CVE-2023-50164, a critical path traversal vulnerability in Apache Struts 2 file upload functionality. This high-fidelity rule detects a specific attack sequence where a malicious multipart/form-data POST request with WebKitFormBoundary is made to a Struts .action upload endpoint, immediately followed by the creation of a JSP web shell file by a Java process in Tomcat's webapps directories. This correlated activity indicates active exploitation resulting in remote code execution capability through unauthorized file upload and web shell deployment.
+Detects the attack sequence for CVE-2023-50164, a path-traversal flaw in Apache Struts 2 file uploads. It correlates a multipart POST to a Struts `.action` upload endpoint with a Java process creating a JSP file in Tomcat's `webapps` directory. Together, those events indicate a web shell upload that can provide remote code execution.
 
 MITRE: Initial Access / T1190 Exploit Public-Facing Application; Persistence / T1505 Server Software Component (T1505.003 Web Shell); Command and Control / T1105 Ingress Tool Transfer
 
@@ -592,7 +592,7 @@ sequence by agent.id with maxspan=10s
 #### Successful SSH Authentication from Unusual IP Address
 _Severity: low · Language: kuery_
 
-This rule leverages the new_terms rule type to detect successful SSH authentications by an IP- address that has not been authenticated in the last 5 days. This behavior may indicate an attacker attempting to gain access to the system using a valid account.
+Uses the `new_terms` rule type to detect a successful SSH login from an IP address that has not authenticated during the previous five days. This can indicate unauthorized use of a valid account.
 
 MITRE: Initial Access / T1078 Valid Accounts; Lateral Movement / T1021 Remote Services (T1021.004 SSH)
 
@@ -603,7 +603,7 @@ event.category:authentication and host.os.type:linux and event.action:ssh_login 
 #### Cron Job Created or Modified
 _Severity: medium · Language: eql_
 
-This rule monitors for (ana)cron jobs being created or renamed. Linux cron jobs are scheduled tasks that can be leveraged by system administrators to set up scheduled tasks, but may be abused by malicious actors for persistence, privilege escalation and command execution. By creating or modifying cron job configurations, attackers can execute malicious commands or scripts at predefined intervals, ensuring their continued presence and enabling unauthorized activities.
+Detects creation or renaming of cron and anacron files. Administrators use these files to schedule jobs. Attackers may modify them to run commands on a schedule, persist, or gain privileges.
 
 MITRE: Persistence / T1053 Scheduled Task/Job (T1053.003 Cron); Privilege Escalation / T1053 Scheduled Task/Job (T1053.003 Cron); Execution / T1053 Scheduled Task/Job (T1053.003 Cron)
 
@@ -629,7 +629,7 @@ file where host.os.type == "linux" and event.action in ("rename", "creation") an
 #### Suspicious Child Execution via Web Server
 _Severity: medium · Language: eql_
 
-Identifies suspicious child processes executed via a web server, which may suggest a vulnerability and remote shell access. Attackers may exploit a vulnerability in a web application to execute commands via a web server, or place a backdoor file that can be abused to gain code execution as a mechanism for persistence.
+Detects suspicious processes launched by web servers or web-server accounts. This can indicate command execution through a vulnerable application or a planted web shell.
 
 MITRE: Persistence / T1505 Server Software Component (T1505.003 Web Shell); Initial Access / T1190 Exploit Public-Facing Application; Execution / T1059 Command and Scripting Interpreter
 
@@ -667,7 +667,7 @@ process where host.os.type == "linux" and event.type == "start" and process.pare
 #### SSH Key Generated via ssh-keygen
 _Severity: low · Language: eql_
 
-This rule identifies the creation of SSH keys using the ssh-keygen tool, which is the standard utility for generating SSH keys. Users often create SSH keys for authentication with remote services. However, threat actors can exploit this tool to move laterally across a network or maintain persistence by generating unauthorized SSH keys, granting them SSH access to systems.
+Detects `ssh-keygen` creating keys in user or system SSH directories. This is common administrative behaviour, but an unauthorized key can provide persistence or lateral access.
 
 MITRE: Persistence / T1098 Account Manipulation (T1098.004 SSH Authorized Keys); Lateral Movement / T1021 Remote Services (T1021.004 SSH); Lateral Movement / T1563 Remote Service Session Hijacking (T1563.001 SSH Hijacking)
 
@@ -680,7 +680,7 @@ not file.name : "known_hosts.*"
 #### Unusual Process Spawned from Web Server Parent
 _Severity: low · Language: esql_
 
-This rule detects unusual processes spawned from a web server parent process by identifying low frequency counts of process spawning activity. Unusual process spawning activity may indicate an attacker attempting to establish persistence, execute malicious commands, or establish command and control channels on the host system. ESQL rules have limited fields available in its alert documents. Make sure to review the original documents to aid in the investigation of this alert.
+Detects low-frequency child processes from web server parents. Rare shells, interpreters, and networking tools can indicate command execution, persistence, or command and control. ES|QL alerts expose only a limited set of fields, so investigators should also inspect the source events.
 
 MITRE: Persistence / T1505 Server Software Component (T1505.003 Web Shell); Execution / T1059 Command and Scripting Interpreter (T1059.004 Unix Shell, T1059.006 Python, T1059.007 JavaScript, T1059.011 Lua); Command and Control / T1071 Application Layer Protocol; Initial Access / T1190 Exploit Public-Facing Application
 
@@ -719,7 +719,7 @@ from logs-endpoint.events.process-* metadata _id, _index, _version
 #### Potential Sudo Privilege Escalation via CVE-2019-14287
 _Severity: high · Language: eql_
 
-This rule monitors for the execution of a suspicious sudo command that is leveraged in CVE-2019-14287 to escalate privileges to root. Sudo does not verify the presence of the designated user ID and proceeds to execute using a user ID that can be chosen arbitrarily. By using the sudo privileges, the command "sudo -u#-1" translates to an ID of 0, representing the root user. This exploit may work for sudo versions prior to v1.28.
+Detects `sudo -u#-1`, the command used to exploit CVE-2019-14287. Vulnerable `sudo` versions interpret user ID `-1` as root, which may let an allowed non-root user gain root privileges. The exploit may work on versions before 1.28.
 
 MITRE: Privilege Escalation / T1068 Exploitation for Privilege Escalation; Privilege Escalation / T1548 Abuse Elevation Control Mechanism (T1548.003 Sudo and Sudo Caching)
 
